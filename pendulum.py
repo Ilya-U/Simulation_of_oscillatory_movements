@@ -16,7 +16,7 @@ class Pendulum:
         self.radius = radius
 
         self.period = 1.5 # Берем наиболее наглядный показатель
-        self.maximal_speed = 75 # Тоже самое, берем наиболее наглядный показатель
+        self.maximal_speed = 10 # Тоже самое, берем наиболее наглядный показатель
 
         self.trajectory: list[Point] = []
         self.generate_trajectory()
