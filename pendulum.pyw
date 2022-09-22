@@ -2,7 +2,7 @@ import math
 import pygame
 import time
 import os
-ACCELERATION_OF_FREE_FALL = 9.81
+
 PI = math.pi
 
 
@@ -13,10 +13,10 @@ class Point:
 
 
 class PendulumDrawner(pygame.sprite.Sprite):
-    def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, maximal_speed: float, color: tuple) -> None:
+    def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, amplitude: float) -> None:
         pygame.sprite.Sprite.__init__(self)
 
-        self.pendulum = Pendulum(fulcrum, length_of_rope, peroid, maximal_speed)
+        self.pendulum = Pendulum(fulcrum, length_of_rope, peroid, amplitude)
         self.game_folder = os.path.dirname(__file__)
         self.img_folder = os.path.join(self.game_folder, 'sprites')
         self.image = pygame.image.load(os.path.join(self.img_folder, 'pendulum.png')).convert()
@@ -30,74 +30,59 @@ class PendulumDrawner(pygame.sprite.Sprite):
 
 
 class Pendulum:
-    def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, maximal_speed: float) -> None:
+    def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, amplitude: float) -> None:
         self.fulcrum = fulcrum
         self.length_of_rope = length_of_rope
+        self.amplitude = amplitude
 
         self.period = peroid
-        self.maximal_speed = maximal_speed  
 
         self.trajectory: list[Point] = []
         self.generate_trajectory()
-        self.current_position_in_trajectory: float = 1
+        self.current_position_in_trajectory: float = 10
+
         self.current_position: Point = self.trajectory[self.current_position_in_trajectory]
 
-        self.__direction = 1
+        self.time = 1
 
     def move(self) -> None:
-        self.current_position = self.trajectory[int(round(self.current_position_in_trajectory))]
-        self.current_position_in_trajectory += self.speed
+        try: # TODO придумать что-нибудь более изобретательнее
+            self.current_position = self.trajectory[int(round(self.current_position_in_trajectory))]
+        except IndexError:
+            self.current_position = self.trajectory[int(round(self.current_position_in_trajectory)) - 1]
+        
+        self.current_position_in_trajectory = self.math_position_in_trajectory + self.maximal_deviation
+        self.add_time()
+
+    def add_time(self):
+        self.time += 0.02 # Т.к. обнвление кадра происходит 50 раз в сек. добаляем 1 / 50
 
     @property
-    def speed(self) -> float:
-        return self.maximal_speed * math.cos(self.deviation_from_equilibrium_point)  * self.cyclic_frequency * self.direction
+    def math_position_in_trajectory(self) -> float:
+        return self.maximal_deviation * math.cos(self.cyclic_frequency * self.time)
 
     @property
-    def direction(self) -> int:
-        return self.__direction
-
-    @direction.getter
-    def direction(self) -> int: # TODO Найти что-нибудь более изобретательное.
-        if round(self.current_position_in_trajectory) == 0 or round(self.current_position_in_trajectory) == len(self.trajectory)-1:
-            self.__direction *= -1  
-
-        return self.__direction
-
-    @property
-    def deviation_from_equilibrium_point(self) -> float:
-        # Находим решением треугольника по трем сторонам.
-        # alpha - угол до точки равновесия, то есть искомый угол.
-        alpha = math.acos(
-            (self.length_of_rope ** 2 + self.length_of_rope ** 2 - self.way_to_equilibrium_point ** 2) /
-            (2 * (self.length_of_rope ** 2))
-        )
-        return alpha
+    def maximal_deviation(self):
+        return len(self.trajectory) / 2
 
     @property
     def cyclic_frequency(self) -> float:
         return PI * 2 / self.period
 
-    @property
-    def way_to_equilibrium_point(self) -> float:
-        return math.sqrt(
-            (self.current_position.x - self.__position_at_equilibrium_point.x) ** 2 +
-            (self.current_position.y - self.__position_at_equilibrium_point.y) ** 2
-        )
-    
-    @property
-    def __position_at_equilibrium_point(self) -> Point:
-        x = self.fulcrum.x
-        y = self.fulcrum.y + self.length_of_rope
-        return Point(x, y)
-
     def generate_trajectory(self, accuracy=250) -> None:
-        for i in range(0, int(PI * accuracy), 1):
+        start_trajectory, end_trajectory = self.converted_amplitude()
+
+        for i in range(int(start_trajectory * accuracy), int(end_trajectory * accuracy), 1):
             corner = i / accuracy
 
             X = round(self.length_of_rope * math.cos(corner) + self.fulcrum.x)
             Y = round(self.length_of_rope * math.sin(corner) + self.fulcrum.y)
 
             self.trajectory.append(Point(X, Y))
+
+    def converted_amplitude(self) -> range:
+        in_radians = self.amplitude * PI / 180
+        return PI/2 - in_radians, PI/2 + in_radians
 
 
 start = time.time()
@@ -109,7 +94,7 @@ pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(600, 0), 400, 1, 1, (0, 0, 255))
+pendulum = PendulumDrawner(Point(600, 0), 300, 7.5, 45)
 all_sprites.add(pendulum)
 
 # Цикл игры
