@@ -1,7 +1,7 @@
 import math
 import pygame
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+import time
 import os
 
 PI = math.pi
@@ -25,19 +25,20 @@ class PendulumDrawner(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
-        self.graph_drawner = PendulumGraphDrawer()
+        self.graph_drawner = GraphDrawer(self.pendulum.maximal_deviation, self.pendulum.maximal_speed)
 
     def update(self) -> None:
         self.update_pendulum()
-        #self.draw_graph()
+        self.draw_graph()
 
     def update_pendulum(self):
         self.pendulum.move()
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
     def draw_graph(self):
-        self.graph_drawner.update(self.pendulum)
-
+        self.graph_drawner.update(self.pendulum.time,
+        self.pendulum.math_position_in_trajectory, 
+        self.pendulum.speed)
 
 
 class Pendulum:
@@ -54,7 +55,7 @@ class Pendulum:
 
         self.current_position: Point = self.trajectory[self.current_position_in_trajectory]
 
-        self.time = 1
+        self.time = 0
 
     def move(self) -> None:
         try: # TODO придумать что-нибудь более изобретательное
@@ -66,7 +67,7 @@ class Pendulum:
         self.add_time()
 
     def add_time(self):
-        self.time += 0.02 # Т.к. обнвление кадра происходит 50 раз в сек. добаляем 1 / 50
+        self.time += 0.05 # Т.к. обнвление кадра происходит 25 раз в сек. добаляем 1 / 25
 
     @property
     def math_position_in_trajectory(self) -> float:
@@ -104,58 +105,67 @@ class Pendulum:
         return PI/2 - in_radians, PI/2 + in_radians
 
 
-class PendulumGraphDrawer:
-    def __init__(self) -> None:
+class GraphDrawer:
+    def __init__(self, y_cos_limit, y_sin_limit) -> None:
+        # TODO Необходимо выделить класс Line, чтобы избежать дублирование кода!!!
+        plt.ion()
         self.fig = plt.figure()
 
-        self.trajectory_graph = self.fig.add_subplot(2, 1, 1)   
-        self.trajectory_graph.set_xlim((0, 60))
-        self.trajectory_graph.set_ylim((-400, 400))
-        self.trajectory_graph_data_x = []
-        self.trajectory_graph_data_y = []
+        self.y_cos_limit = y_cos_limit
+        self.y_sin_limit = y_sin_limit
+
+        self.time_limit = 30
         
-        self.speed_graph = self.fig.add_subplot(2, 1, 2)
-        self.speed_graph.set_xlim((0, 60))
-        self.speed_graph.set_ylim((-400, 400))
-        self.speed_graph_data_x = []
-        self.speed_graph_data_y = []
+        self.init_cos_line()
 
-    def update(self, pendulum: Pendulum):
-        self.update_trajectory_graph(pendulum)
-        self.update_speed_graph(pendulum)
-        plt.draw()
-        plt.clf()
+        self.init_sin_line()
 
-    def update_trajectory_graph(self, pendulum: Pendulum):
-        self.trajectory_graph_data_x.append(pendulum.time)
-        self.trajectory_graph_data_y.append(pendulum.math_position_in_trajectory)
-        self.trajectory_graph.clear()
-        self.trajectory_graph.plot(
-            self.trajectory_graph_data_x, 
-            self.trajectory_graph_data_y,
-            color="red"
-        )
+    def update(self, time, new_cos_data, new_sin_data):
+        self.add_new_cos_data(time, new_cos_data)
+        self.add_new_sin_data(time, new_sin_data)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
-    def update_speed_graph(self, pendulum: Pendulum):
-        self.speed_graph_data_x.append(pendulum.time)
-        self.speed_graph_data_y.append(pendulum.speed)
-        self.speed_graph.clear()
-        self.speed_graph.plot(
-            self.speed_graph_data_x,
-            self.speed_graph_data_y,
-            color="orange"
-        )
+    def add_new_cos_data(self, new_x, new_y):
+        self.cos_line_data_x.append(new_x)
+        self.cos_line_data_y.append(new_y)
+        self.cos_line.set_xdata(self.cos_line_data_x)
+        self.cos_line.set_ydata(self.cos_line_data_y)
+
+    def add_new_sin_data(self, new_x, new_y):
+        self.sin_line_data_x.append(new_x)
+        self.sin_line_data_y.append(new_y)
+        self.sin_line.set_xdata(self.sin_line_data_x)
+        self.sin_line.set_ydata(self.sin_line_data_y)
+
+    def init_sin_line(self):
+        self.ax = self.fig.add_subplot(212)
+        self.ax.set_xlim(0, self.time_limit)
+        self.ax.set_ylim(-self.y_sin_limit, self.y_sin_limit)
+        self.sin_line_data_x = []
+        self.sin_line_data_y = []
+        self.sin_line, = self.ax.plot(self.cos_line_data_x, self.cos_line_data_y, color="blue")
+
+    def init_cos_line(self):
+        self.ax = self.fig.add_subplot(211)
+        self.ax.set_xlim(0, self.time_limit)
+        self.ax.set_ylim(-self.y_cos_limit, self.y_cos_limit)
+        self.cos_line_data_x = []
+        self.cos_line_data_y = []
+        self.cos_line, = self.ax.plot(self.cos_line_data_x, self.cos_line_data_y, color="red")
 
 
-FPS = 50
+
+start = time.time()
+FPS = 20
 pygame.init()
 pygame.mixer.init()
-screen = pygame.display.set_mode((1200, 600))
+screen = pygame.display.set_mode((800, 400))
 pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(600, 0), 350, 2, 40)
+pendulum = PendulumDrawner(Point(400, 0), 300, 2, 40)
 all_sprites.add(pendulum)
 
 # Цикл игры
@@ -183,5 +193,7 @@ while running:
 
 
 pygame.quit()
+end = time.time()
+print(end - start)
 # pyinstaller -F --add-data "sprites\\pendulum.png;." pendulum.pyw          |Компиляция с картинками
 # pyinstaller -F --add-data "sprites\\pendulum.png;.\sprites" pendulum.pyw  |
