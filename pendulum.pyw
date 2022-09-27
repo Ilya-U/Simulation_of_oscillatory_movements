@@ -1,8 +1,9 @@
 import math
 import pygame
-import matplotlib.pyplot as plt
 import time
 import os
+
+from graph_drawer import GraphDrawer
 
 PI = math.pi
 
@@ -105,57 +106,6 @@ class Pendulum:
         return PI/2 - in_radians, PI/2 + in_radians
 
 
-class GraphDrawer:
-    def __init__(self, y_cos_limit, y_sin_limit) -> None:
-        # TODO Необходимо выделить класс Line, чтобы избежать дублирование кода!!!
-        plt.ion()
-        self.fig = plt.figure()
-
-        self.y_cos_limit = y_cos_limit
-        self.y_sin_limit = y_sin_limit
-
-        self.time_limit = 30
-        
-        self.init_cos_line()
-
-        self.init_sin_line()
-
-    def update(self, time, new_cos_data, new_sin_data):
-        self.add_new_cos_data(time, new_cos_data)
-        self.add_new_sin_data(time, new_sin_data)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-
-    def add_new_cos_data(self, new_x, new_y):
-        self.cos_line_data_x.append(new_x)
-        self.cos_line_data_y.append(new_y)
-        self.cos_line.set_xdata(self.cos_line_data_x)
-        self.cos_line.set_ydata(self.cos_line_data_y)
-
-    def add_new_sin_data(self, new_x, new_y):
-        self.sin_line_data_x.append(new_x)
-        self.sin_line_data_y.append(new_y)
-        self.sin_line.set_xdata(self.sin_line_data_x)
-        self.sin_line.set_ydata(self.sin_line_data_y)
-
-    def init_sin_line(self):
-        self.ax = self.fig.add_subplot(212)
-        self.ax.set_xlim(0, self.time_limit)
-        self.ax.set_ylim(-self.y_sin_limit, self.y_sin_limit)
-        self.sin_line_data_x = []
-        self.sin_line_data_y = []
-        self.sin_line, = self.ax.plot(self.cos_line_data_x, self.cos_line_data_y, color="blue")
-
-    def init_cos_line(self):
-        self.ax = self.fig.add_subplot(211)
-        self.ax.set_xlim(0, self.time_limit)
-        self.ax.set_ylim(-self.y_cos_limit, self.y_cos_limit)
-        self.cos_line_data_x = []
-        self.cos_line_data_y = []
-        self.cos_line, = self.ax.plot(self.cos_line_data_x, self.cos_line_data_y, color="red")
-
-
-
 start = time.time()
 FPS = 20
 pygame.init()
@@ -165,7 +115,7 @@ pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(400, 0), 300, 2, 40)
+pendulum = PendulumDrawner(Point(400, 0), 300, 1.5, 45)
 all_sprites.add(pendulum)
 
 # Цикл игры
