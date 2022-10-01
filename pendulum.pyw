@@ -26,7 +26,7 @@ class PendulumDrawner(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
-        self.graph_drawner = GraphDrawer(self.pendulum.maximal_deviation, self.pendulum.maximal_speed)
+        self.graph_drawner = GraphDrawer(self.pendulum.maximal_deviation, self.pendulum.maximal_speed, "Позиция", "Скорость")
 
     def update(self) -> None:
         self.update_pendulum()
@@ -37,7 +37,7 @@ class PendulumDrawner(pygame.sprite.Sprite):
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
     def draw_graph(self):
-        self.graph_drawner.update(self.pendulum.time,
+        self.graph_drawner.update(self.pendulum.timer,
         self.pendulum.math_position_in_trajectory, 
         self.pendulum.speed)
 
@@ -56,7 +56,7 @@ class Pendulum:
 
         self.current_position: Point = self.trajectory[self.current_position_in_trajectory]
 
-        self.time = 0
+        self.timer = 0
 
     def move(self) -> None:
         try: # TODO придумать что-нибудь более изобретательное
@@ -68,15 +68,15 @@ class Pendulum:
         self.add_time()
 
     def add_time(self):
-        self.time += 0.05 # Т.к. обнвление кадра происходит 25 раз в сек. добаляем 1 / 25
+        self.timer += 0.05 # Т.к. обнвление кадра происходит 20 раз в сек. добаляем 1 / 20
 
     @property
     def math_position_in_trajectory(self) -> float:
-        return self.maximal_deviation * math.cos(self.cyclic_frequency * self.time)
+        return self.maximal_deviation * math.cos(self.cyclic_frequency * self.timer)
 
     @property
     def speed(self):
-        return -self.maximal_speed * math.sin(self.time * self.cyclic_frequency)
+        return -self.maximal_speed * math.sin(self.cyclic_frequency * self.timer)
 
     @property
     def maximal_speed(self):
@@ -115,7 +115,7 @@ pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(400, 0), 300, 1.5, 45)
+pendulum = PendulumDrawner(Point(400, 0), 300, 2, 45)
 all_sprites.add(pendulum)
 
 # Цикл игры
