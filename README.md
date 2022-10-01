@@ -2,6 +2,7 @@
 
 ## Установка всех библиотек
 `pip install pygame`
+
 `pip install matplotlib`
 
 ## Компиляция
