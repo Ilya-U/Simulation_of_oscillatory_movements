@@ -26,7 +26,7 @@ class PendulumDrawner(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
-        self.graph_drawner = GraphDrawer(self.pendulum.maximal_deviation, self.pendulum.maximal_speed, "Позиция", "Скорость")
+        self.graph_drawer = GraphDrawer(self.pendulum.maximal_deviation+10, self.pendulum.maximal_speed+10, "Позиция", "Скорость")
 
     def update(self) -> None:
         self.update_pendulum()
@@ -37,7 +37,7 @@ class PendulumDrawner(pygame.sprite.Sprite):
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
     def draw_graph(self):
-        self.graph_drawner.update(self.pendulum.timer,
+        self.graph_drawer.update(self.pendulum.timer,
         self.pendulum.math_position_in_trajectory, 
         self.pendulum.speed)
 
@@ -56,7 +56,7 @@ class Pendulum:
 
         self.current_position: Point = self.trajectory[self.current_position_in_trajectory]
 
-        self.timer = 0
+        self.timer: float = 0
 
     def move(self) -> None:
         try: # TODO придумать что-нибудь более изобретательное
@@ -101,12 +101,11 @@ class Pendulum:
 
             self.trajectory.append(Point(X, Y))
 
-    def converted_amplitude(self) -> range:
+    def converted_amplitude(self) -> tuple:
         in_radians = self.amplitude * PI / 180
         return PI/2 - in_radians, PI/2 + in_radians
 
 
-start = time.time()
 FPS = 20
 pygame.init()
 pygame.mixer.init()
@@ -115,13 +114,13 @@ pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(400, 0), 300, 2, 45)
+pendulum = PendulumDrawner(Point(400, 0), 300, 5, 45)
 all_sprites.add(pendulum)
 
 # Цикл игры
 running = True
 paused = False
-
+start = time.time()
 while running:
     # Держим цикл на правильной скорости
     clock.tick(FPS)
@@ -130,8 +129,18 @@ while running:
         # check for closing window
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.K_SPACE:
-            paused = True
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                
+                if not paused:
+                    paused = True
+                    continue
+
+                paused = False
+
+    if paused:
+        continue
+    
     # Обновление
     all_sprites.update()
     
@@ -141,9 +150,9 @@ while running:
     # После отрисовки всего, переворачиваем экран
     pygame.display.flip()
 
-
-pygame.quit()
 end = time.time()
+pygame.quit()
+
 print(end - start)
 # pyinstaller -F --add-data "sprites\\pendulum.png;." pendulum.pyw          |Компиляция с картинками
 # pyinstaller -F --add-data "sprites\\pendulum.png;.\sprites" pendulum.pyw  |
