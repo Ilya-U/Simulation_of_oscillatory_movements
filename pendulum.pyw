@@ -14,41 +14,12 @@ class Point:
         self.y = y
 
 
-class PendulumDrawner(pygame.sprite.Sprite):
-    def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, amplitude: float) -> None:
-        pygame.sprite.Sprite.__init__(self)
-
-        self.pendulum = Pendulum(fulcrum, length_of_rope, peroid, amplitude)
-        self.game_folder = os.path.dirname(__file__)
-        self.img_folder = os.path.join(self.game_folder, 'sprites')
-        self.image = pygame.image.load(os.path.join(self.img_folder, 'pendulum.png')).convert()
-
-        self.rect = self.image.get_rect()
-        self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
-
-        self.graph_drawner = GraphDrawer(self.pendulum.maximal_deviation, self.pendulum.maximal_speed)
-
-    def update(self) -> None:
-        self.update_pendulum()
-        self.draw_graph()
-
-    def update_pendulum(self):
-        self.pendulum.move()
-        self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
-
-    def draw_graph(self):
-        self.graph_drawner.update(self.pendulum.time,
-        self.pendulum.math_position_in_trajectory, 
-        self.pendulum.speed)
-
-
 class Pendulum:
     def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, amplitude: float) -> None:
         self.fulcrum = fulcrum
         self.length_of_rope = length_of_rope
-        self.amplitude = amplitude
-
         self.period = peroid
+        self.amplitude = amplitude
 
         self.trajectory: list[Point] = []
         self.generate_trajectory()
@@ -56,7 +27,7 @@ class Pendulum:
 
         self.current_position: Point = self.trajectory[self.current_position_in_trajectory]
 
-        self.time = 0
+        self.timer = 0
 
     def move(self) -> None:
         try: # TODO придумать что-нибудь более изобретательное
@@ -68,15 +39,15 @@ class Pendulum:
         self.add_time()
 
     def add_time(self):
-        self.time += 0.05 # Т.к. обнвление кадра происходит 25 раз в сек. добаляем 1 / 25
+        self.timer += 0.05 # Т.к. обнвление кадра происходит 20 раз в сек. добаляем 1 / 20
 
     @property
     def math_position_in_trajectory(self) -> float:
-        return self.maximal_deviation * math.cos(self.cyclic_frequency * self.time)
+        return self.maximal_deviation * math.cos(self.cyclic_frequency * self.timer)
 
     @property
     def speed(self):
-        return -self.maximal_speed * math.sin(self.time * self.cyclic_frequency)
+        return -self.maximal_speed * math.sin(self.cyclic_frequency * self.timer)
 
     @property
     def maximal_speed(self):
@@ -101,9 +72,37 @@ class Pendulum:
 
             self.trajectory.append(Point(X, Y))
 
-    def converted_amplitude(self) -> range:
+    def converted_amplitude(self) -> tuple:
         in_radians = self.amplitude * PI / 180
         return PI/2 - in_radians, PI/2 + in_radians
+
+
+class PendulumDrawner(Pendulum, pygame.sprite.Sprite):
+    def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, amplitude: float) -> None:
+        pygame.sprite.Sprite.__init__(self)
+        super().__init__(fulcrum, length_of_rope, peroid, amplitude)
+
+        self.game_folder = os.path.dirname(__file__)
+        self.img_folder = os.path.join(self.game_folder, 'sprites')
+        self.image = pygame.image.load(os.path.join(self.img_folder, 'pendulum.png')).convert()
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.current_position.x, self.current_position.y)
+
+        self.graph_drawner = GraphDrawer(self.maximal_deviation, self.maximal_speed, "Позиция", "Скорость")
+
+    def update(self) -> None:
+        self.update_pendulum()
+        self.draw_graph()
+
+    def update_pendulum(self):
+        self.move()
+        self.rect.center = (self.current_position.x, self.current_position.y)
+
+    def draw_graph(self):
+        self.graph_drawner.update(self.timer,
+        self.math_position_in_trajectory, 
+        self.speed)
 
 
 start = time.time()
@@ -115,7 +114,7 @@ pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(400, 0), 300, 1.5, 45)
+pendulum = PendulumDrawner(Point(400, 0), 300, 2, 45)
 all_sprites.add(pendulum)
 
 # Цикл игры
