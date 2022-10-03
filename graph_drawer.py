@@ -14,7 +14,7 @@ class GraphDrawer:
         self.cos_line = Line(self.fig.add_subplot(211), self.time_limit, self.y_cos_limit, "red", cos_label)
         self.sin_line = Line(self.fig.add_subplot(212), self.time_limit, self.y_sin_limit, "blue", sin_label)
 
-    def update(self, time, new_cos_data, new_sin_data):
+    def update(self, time, new_cos_data, new_sin_data) -> None:
         if time <= self.time_limit:
             self.cos_line.add_data(time, new_cos_data)
             self.sin_line.add_data(time, new_sin_data)
@@ -36,7 +36,7 @@ class Line:
         self.data_y = []
         self.line, = self.ax.plot(self.data_x, self.data_y, color=color)
 
-    def add_data(self, new_x, new_y):
+    def add_data(self, new_x, new_y) -> None:
         self.data_x.append(new_x)
         self.data_y.append(new_y)
         self.line.set_xdata(self.data_x)

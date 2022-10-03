@@ -27,16 +27,17 @@ class PendulumDrawner(pygame.sprite.Sprite):
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
         self.graph_drawer = GraphDrawer(self.pendulum.maximal_deviation+10, self.pendulum.maximal_speed+10, "Позиция", "Скорость")
+        # Прибавляем по 10 к каждому значению, чтобы графики не "упирались" в границы.
 
     def update(self) -> None:
         self.update_pendulum()
         self.draw_graph()
 
-    def update_pendulum(self):
+    def update_pendulum(self) -> None:
         self.pendulum.move()
         self.rect.center = (self.pendulum.current_position.x, self.pendulum.current_position.y)
 
-    def draw_graph(self):
+    def draw_graph(self) -> None:
         self.graph_drawer.update(self.pendulum.timer,
         self.pendulum.math_position_in_trajectory, 
         self.pendulum.speed)
@@ -56,7 +57,7 @@ class Pendulum:
 
         self.current_position: Point = self.trajectory[self.current_position_in_trajectory]
 
-        self.timer: float = 0
+        self.timer: float = 0.
 
     def move(self) -> None:
         try: # TODO придумать что-нибудь более изобретательное
@@ -67,7 +68,7 @@ class Pendulum:
         self.current_position_in_trajectory = self.math_position_in_trajectory + self.maximal_deviation
         self.add_time()
 
-    def add_time(self):
+    def add_time(self) -> None:
         self.timer += 0.05 # Т.к. обнвление кадра происходит 20 раз в сек. добаляем 1 / 20
 
     @property
@@ -75,15 +76,15 @@ class Pendulum:
         return self.maximal_deviation * math.cos(self.cyclic_frequency * self.timer)
 
     @property
-    def speed(self):
+    def speed(self) -> float:
         return -self.maximal_speed * math.sin(self.cyclic_frequency * self.timer)
 
     @property
-    def maximal_speed(self):
+    def maximal_speed(self) -> float:
         return self.maximal_deviation * self.cyclic_frequency
 
     @property
-    def maximal_deviation(self):
+    def maximal_deviation(self) -> float:
         return len(self.trajectory) / 2
 
     @property
@@ -114,7 +115,7 @@ pygame.display.set_caption("TEST")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
-pendulum = PendulumDrawner(Point(400, 0), 300, 5, 45)
+pendulum = PendulumDrawner(Point(400, 0), 300, 2, 45)
 all_sprites.add(pendulum)
 
 # Цикл игры
@@ -131,12 +132,7 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                
-                if not paused:
-                    paused = True
-                    continue
-
-                paused = False
+                paused = not paused
 
     if paused:
         continue
