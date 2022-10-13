@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 
 class GraphDrawer:
     def __init__(self, y_cos_limit: float, y_sin_limit: float, cos_label: str, sin_label: str) -> None:
         plt.ion()
         self.fig = plt.figure()
+        plt.gcf().canvas.set_window_title("Графики")
 
         self.y_sin_limit = y_sin_limit
         self.y_cos_limit = y_cos_limit
@@ -14,12 +16,14 @@ class GraphDrawer:
         self.cos_line = Line(self.fig.add_subplot(211), self.time_limit, self.y_cos_limit, "red", cos_label)
         self.sin_line = Line(self.fig.add_subplot(212), self.time_limit, self.y_sin_limit, "blue", sin_label)
 
+
     def update(self, time, new_cos_data, new_sin_data) -> None:
         if time <= self.time_limit:
             self.cos_line.add_data(time, new_cos_data)
             self.sin_line.add_data(time, new_sin_data)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
 
 
 class Line:
@@ -30,10 +34,13 @@ class Line:
 
         self.ax.set_xlim(0, self.time_limit)
         self.ax.set_ylim(-self.y_limit, self.y_limit)
+
         self.ax.set_ylabel(ylabel)
         self.ax.set_xlabel(xlabel)
+
         self.data_x = []
         self.data_y = []
+
         self.line, = self.ax.plot(self.data_x, self.data_y, color=color)
 
     def add_data(self, new_x, new_y) -> None:
