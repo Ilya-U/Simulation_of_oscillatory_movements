@@ -25,7 +25,6 @@ class ElectronicOscillatorDrawer:
         # Прибавляем по 10 к каждому значению, чтобы графики не "упирались" в границы.
 
 
-
 class ElectronicOscillator:
     def __init__(self, maximal_charge: float, period: float) -> None:
         self.maximal_charge = maximal_charge
@@ -57,68 +56,72 @@ class ElectronicOscillator:
 
 
 class Area:
-    def __init__(self, left_corner: Point, right_corner: Point, maximal_light: tuple) -> None:
-        self.left_corner = left_corner
-        self.right_corner = right_corner
+    def __init__(self, center: Point, radius: int, maximal_color) -> None:
+        # ну наконец-то!
+        # Все дело в несоответсвии фаткического центра и 
+        # центра внутри массива!
+        self.screen_center = center
+        self.center = Point(
+            radius,
+            radius
+        )
+        self.radius = radius
+        self.width = self.radius * 2
+        self.maximal_color = maximal_color
 
-        self.width = self.right_corner.x - self.left_corner.x
-        self.height = self.right_corner.y - self.left_corner.y
-        
-        self.x_maximal_distance = self.width / 2
-        self.y_maximal_distance = self.height / 2
-
-        self.center = Point(self.x_maximal_distance, self.y_maximal_distance)
-
-        self.maximal_light = maximal_light
-
-        self.colors_of_points: list[list[tuple]] = [[None] * self.width] * self.height
+        self.left_corner = Point(
+            self.screen_center.x - self.radius,
+            self.screen_center.y - self.radius
+        )
+        self.all_points: list[list[tuple]] = [(self.width) * [None]] * (self.width)
+        self.distances: list[list[tuple]] = [(self.width) * [None]] * (self.width) # Удалить после дебага!
+        self.ratios: list[list[tuple]] = [(self.width) * [None]] * (self.width) # Удалить после дебага!
 
     def set_maximal_light(self, value):
-        self.maximal_light = value
+        self.maximal_color = value
 
     def update(self, screen):
         self.count_all_points()
         self.draw_all_points(screen)
 
-    def draw_all_points(self, screen):
-        for x in range(len(self.colors_of_points)):
-            for y in range(len(self.colors_of_points[x])):
-                current_color = self.colors_of_points[x][y]
-                x_for_screen = x + self.left_corner.x
-                y_for_screen = y + self.left_corner.y
-
-                gfxdraw.pixel(screen, x_for_screen, y_for_screen, current_color)
-
     def count_all_points(self):
-        for x in range(len(self.colors_of_points)):
-            for y in range(len(self.colors_of_points[x])):
-                red, green, blue = self.maximal_light
-                current_coefficient = self.get_coefficient(x, y)
-                
-                red *= current_coefficient
-                green *= current_coefficient
-                blue *= current_coefficient
+        for y in range(len(self.all_points)):
+            for x in range(len(self.all_points[y])):
+                if x == 19 and y == 19:
+                    pass
+                distance = self.get_distance(x, y)
+                ratio = -((distance / self.radius) ** 2) + 1
+                red, green, blue = self.maximal_color
+                red *= ratio
+                green *= ratio
+                blue *= ratio
+                self.distances[y][x] = round(distance, 4)# Удалить после дебага!
+                self.ratios[y][x] = round(ratio, 2)# Удалить после дебага!
+                self.all_points[y][x] = (red, green, blue)
 
-                self.colors_of_points[x][y] = (
-                    int(round(red)),
-                    int(round(green)),
-                    int(round(blue))
-                )
-
-    def get_coefficient(self, x, y):
-        current_distance = self.get_distance(x, y)
-        result = -(current_distance / self.y_maximal_distance) ** 2 + 1
-        
-        return result if result > 0 else 0
-    
     def get_distance(self, x, y):
+        if x == 10 and y == 0:
+            pass
+        if x == 0 and y == 10:
+            pass
+        if x == 10 and y == 10:
+            pass
         x_distance = self.center.x - x
         y_distance = self.center.y - y
-
-        return math.sqrt(
-            (x_distance) ** 2 +
+        ans = math.sqrt(
+            x_distance ** 2 +
             y_distance ** 2
         )
+        return ans if ans <= self.radius else self.radius
+
+    def draw_all_points(self, screen):
+        for y in range(len(self.all_points)):
+            for x in range(len(self.all_points[y])):
+                current_color = self.all_points[y][x]
+                x_for_screen = x + self.left_corner.x
+                y_for_screen = y + self.left_corner.y
+                gfxdraw.pixel(screen, x_for_screen, y_for_screen, current_color)
+
 
 FPS = 20
 pygame.init()
@@ -127,17 +130,23 @@ screen = pygame.display.set_mode((800, 400))
 
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
-area = Area(Point(0, 0),
-    Point(400, 400),
-    (0, 0, 0)
+area = Area(Point(400, 200),
+    10,
+    (255, 255, 255)
     )
 i = 0
-while True:
+while i <= 255:
+        for event in pygame.event.get():
+            # check for closing window
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    paused = not paused
+                    
         clock.tick(FPS)
-        area.set_maximal_light((0, 0, i))
         start = time.time()
         area.update(screen)
-        i += 100
         end = time.time()
         print(start - end)
         pygame.display.flip()
