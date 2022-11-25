@@ -56,84 +56,55 @@ class ElectronicOscillator:
 
 
 class Area:
-    def __init__(self, center: Point, radius: int, maximal_color) -> None:
-        # ну наконец-то!
-        # Все дело в несоответсвии фаткического центра и 
-        # центра внутри массива!
-        self.screen_center = center
-        self.center = Point(
-            radius,
-            radius
-        )
+    def __init__(self, center: Point, radius: int, maximal_color: tuple, screen) -> None:
+        self.center = center
         self.radius = radius
         self.width = self.radius * 2
         self.maximal_color = maximal_color
+        self.screen = screen
 
         self.left_corner = Point(
-            self.screen_center.x - self.radius,
-            self.screen_center.y - self.radius
+            self.center.x - self.radius,
+            self.center.y - self.radius
         )
-        self.all_points: list[list[tuple]] = [(self.width) * [None]] * (self.width)
-        self.distances: list[list[tuple]] = [(self.width) * [None]] * (self.width) # Удалить после дебага!
-        self.ratios: list[list[tuple]] = [(self.width) * [None]] * (self.width) # Удалить после дебага!
+        self.right_corner = Point(
+            self.center.x + self.radius,
+            self.center.y + self.radius
+        )
 
-    def set_maximal_light(self, value):
-        self.maximal_color = value
+    def update(self):
+        for y in range(self.left_corner.y, self.right_corner.y+1):
+            for x in range(self.left_corner.x, self.right_corner.x+1):
+                self.draw_point(x, y)
 
-    def update(self, screen):
-        self.count_all_points()
-        self.draw_all_points(screen)
-
-    def count_all_points(self):
-        for y in range(len(self.all_points)):
-            for x in range(len(self.all_points[y])):
-                if x == 19 and y == 19:
-                    pass
-                distance = self.get_distance(x, y)
-                ratio = -((distance / self.radius) ** 2) + 1
-                red, green, blue = self.maximal_color
-                red *= ratio
-                green *= ratio
-                blue *= ratio
-                self.distances[y][x] = round(distance, 4)# Удалить после дебага!
-                self.ratios[y][x] = round(ratio, 2)# Удалить после дебага!
-                self.all_points[y][x] = (red, green, blue)
+    def draw_point(self, x, y):
+        distance = self.get_distance(x, y)
+        ratio = -(distance/self.radius)**2 + 1
+        red, green, blue = self.maximal_color
+        red *= ratio
+        green *= ratio
+        blue *= ratio
+        gfxdraw.pixel(screen, x, y, (red, green, blue))
 
     def get_distance(self, x, y):
-        if x == 10 and y == 0:
-            pass
-        if x == 0 and y == 10:
-            pass
-        if x == 10 and y == 10:
-            pass
         x_distance = self.center.x - x
         y_distance = self.center.y - y
-        ans = math.sqrt(
-            x_distance ** 2 +
-            y_distance ** 2
+        result = math.sqrt(
+            x_distance ** 2 + y_distance ** 2
         )
-        return ans if ans <= self.radius else self.radius
-
-    def draw_all_points(self, screen):
-        for y in range(len(self.all_points)):
-            for x in range(len(self.all_points[y])):
-                current_color = self.all_points[y][x]
-                x_for_screen = x + self.left_corner.x
-                y_for_screen = y + self.left_corner.y
-                gfxdraw.pixel(screen, x_for_screen, y_for_screen, current_color)
-
+        return result if result <= self.radius else self.radius
 
 FPS = 20
-pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((800, 400))
 
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 area = Area(Point(400, 200),
-    10,
-    (255, 255, 255)
-    )
+    100,
+    (128, 0, 255),
+    screen
+)
 i = 0
 while i <= 255:
         for event in pygame.event.get():
@@ -146,7 +117,7 @@ while i <= 255:
                     
         clock.tick(FPS)
         start = time.time()
-        area.update(screen)
+        area.update()
         end = time.time()
-        print(start - end)
+        print(end - start)
         pygame.display.flip()
