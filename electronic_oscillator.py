@@ -71,20 +71,23 @@ class Area:
             self.center.x + self.radius,
             self.center.y + self.radius
         )
+        self.sqaure: int = 4
+        # В целях оптимизации, мы отрисовывавем не каждый пиксель, а "квадраты".
+        # Все вычесление производятся для центра квадрата. self.square - это длинна стороны такого квадрата.
 
     def update(self):
-        for y in range(self.left_corner.y, self.right_corner.y+1):
-            for x in range(self.left_corner.x, self.right_corner.x+1):
-                self.draw_point(x, y)
+        for y in range(self.left_corner.y, self.right_corner.y+1, self.sqaure):
+            for x in range(self.left_corner.x, self.right_corner.x+1, self.sqaure):
+                self.draw_area(x, y)
 
-    def draw_point(self, x, y):
-        distance = self.get_distance(x, y)
-        ratio = -(distance/self.radius)**2 + 1
+    def draw_area(self, x, y):
+        distance = self.get_distance(x+self.sqaure/2, y+self.sqaure/2)
+        ratio = -(distance/self.radius)**2 + 1 # Формула, выведенная мной для вычисления яркости.
         red, green, blue = self.maximal_color
         red *= ratio
         green *= ratio
         blue *= ratio
-        gfxdraw.pixel(screen, x, y, (red, green, blue))
+        self.draw_square(x, y, (red, green, blue))
 
     def get_distance(self, x, y):
         x_distance = self.center.x - x
@@ -94,6 +97,12 @@ class Area:
         )
         return result if result <= self.radius else self.radius
 
+    def draw_square(self, x, y, color):
+        for i in range(y, y+self.sqaure):
+            for j in range(x, x+self.sqaure):
+                gfxdraw.pixel(self.screen, j, i, color)
+
+
 FPS = 20
 pygame.mixer.init()
 screen = pygame.display.set_mode((800, 400))
@@ -101,7 +110,7 @@ screen = pygame.display.set_mode((800, 400))
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 area = Area(Point(400, 200),
-    100,
+    60,
     (128, 0, 255),
     screen
 )
@@ -114,7 +123,6 @@ while i <= 255:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     paused = not paused
-                    
         clock.tick(FPS)
         start = time.time()
         area.update()
