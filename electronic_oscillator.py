@@ -8,21 +8,65 @@ from point import Point
 from graph_drawer import GraphDrawer
 
 PI = math.pi
+BLACK = (0, 0, 0)
+PURPLE = (139, 0, 255)
+BLUE = (0, 0, 255)
 
 
-class ElectronicOscillatorDrawer:
-    def __init__(self, maximal_charge: float, period: float, sprite: str) -> None:
-        pygame.sprite.Sprite.__init__(self)
-
+class ElectronicOscillatorDrawer(pygame.sprite.Sprite):
+    def __init__(self, center: Point, maximal_charge: float, period: float, sprite: str, screen) -> None:
         self.electronic_osciliator = ElectronicOscillator(maximal_charge, period)
-        self.game_folder = os.path.dirname(__file__)
-        self.img_folder = os.path.join(self.game_folder, "sprites")
-        self.image = pygame.image.load(os.path.join(self.img_folder, sprite)).convert()
-
-        self.rect = self.image.get_rect()
+        self.init_pg_sprite(center, sprite)
 
         self.graph_drawer = GraphDrawer(self.electronic_osciliator.maximal_charge+10, self.electronic_osciliator.maximal_amerage+10, "Заряд", "Сила тока")
         # Прибавляем по 10 к каждому значению, чтобы графики не "упирались" в границы.
+
+        self.inductor_coil_distacne: int = 120
+        self.capacitor_distance: int = 120
+
+        self.init_areas(center, screen)
+
+    def init_pg_sprite(self, center, sprite):
+        pygame.sprite.Sprite.__init__(self)
+        self.game_folder = os.path.dirname(__file__)
+        self.img_folder = os.path.join(self.game_folder, "sprites")
+        self.image = pygame.image.load(os.path.join(self.img_folder, sprite)).convert()
+        self.image.set_colorkey(BLACK)
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (center.x, center.y)
+
+    def init_areas(self, center, screen):
+        self.amperage_area = Area(
+            Point(center.x + self.inductor_coil_distacne, center.y),
+            0,
+            PURPLE,
+            screen
+        )
+        self.charge_area = Area(
+            Point(center.x - self.capacitor_distance, center.y),
+            0,
+            BLUE,
+            screen
+        )
+
+    def update(self):
+        self.electronic_osciliator.process()
+        self.update_areas()
+        self.update_graph()
+
+    def update_areas(self):
+        self.charge_area.set_radius(int(abs(round(self.electronic_osciliator.charge))))
+        self.amperage_area.set_radius(int(abs(round(self.electronic_osciliator.amperage))))
+        self.charge_area.update()
+        self.amperage_area.update()
+
+    def update_graph(self):
+        self.graph_drawer.update(
+            self.electronic_osciliator.timer,
+            self.electronic_osciliator.charge,
+            self.electronic_osciliator.amperage
+        )
 
 
 class ElectronicOscillator:
@@ -36,7 +80,7 @@ class ElectronicOscillator:
         self.add_time()
 
     def add_time(self) -> None:
-        self.timer += 0.05 # Т.к. обнвление кадра происходит 20 раз в сек. добаляем 1 / 20
+        self.timer += 0.066 # Т.к. обнвление кадра происходит 15 раз в сек. добаляем 1 / 15
 
     @property
     def charge(self) -> float:
@@ -63,6 +107,12 @@ class Area:
         self.maximal_color = maximal_color
         self.screen = screen
 
+        self.make_corners()
+        self.sqaure: int = 5
+        # В целях оптимизации, мы отрисовывавем не каждый пиксель, а "квадраты".
+        # Все вычесление производятся для центра квадрата. self.square - это длинна стороны такого квадрата.
+
+    def make_corners(self):
         self.left_corner = Point(
             self.center.x - self.radius,
             self.center.y - self.radius
@@ -71,9 +121,12 @@ class Area:
             self.center.x + self.radius,
             self.center.y + self.radius
         )
-        self.sqaure: int = 4
-        # В целях оптимизации, мы отрисовывавем не каждый пиксель, а "квадраты".
-        # Все вычесление производятся для центра квадрата. self.square - это длинна стороны такого квадрата.
+
+    def set_radius(self, value):
+        if value == 0:
+            value = 1
+        self.radius = value
+        self.make_corners()
 
     def update(self):
         for y in range(self.left_corner.y, self.right_corner.y+1, self.sqaure):
@@ -103,29 +156,52 @@ class Area:
                 gfxdraw.pixel(self.screen, j, i, color)
 
 
-FPS = 20
+FPS = 15
 pygame.mixer.init()
 screen = pygame.display.set_mode((800, 400))
 
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
-area = Area(Point(400, 200),
-    60,
-    (128, 0, 255),
+electr = ElectronicOscillatorDrawer(
+    Point(400, 200),
+    30,
+    2,
+    "electronic_oscillator.png",
     screen
 )
-i = 0
-while i <= 255:
-        for event in pygame.event.get():
-            # check for closing window
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    paused = not paused
-        clock.tick(FPS)
-        start = time.time()
-        area.update()
-        end = time.time()
-        print(end - start)
-        pygame.display.flip()
+all_sprites.add(electr)
+
+running = True
+paused = False
+
+while running:
+    # Держим цикл на правильной скорости
+    clock.tick(FPS)
+    # Ввод процесса (события)
+    for event in pygame.event.get():
+        # check for closing window
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                paused = not paused
+
+    if paused:
+        continue
+    
+    # Обновление
+    screen.fill((0, 0, 0))
+    start = time.time()
+
+
+    # Рендеринг
+    all_sprites.update()
+    all_sprites.draw(screen)
+
+    # После отрисовки всего, переворачиваем экран
+    pygame.display.flip()
+    end = time.time()
+    print(end - start)
+
+
+pygame.quit()
