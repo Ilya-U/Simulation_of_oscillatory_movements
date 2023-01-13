@@ -1,11 +1,12 @@
 import math
-import pygame
-from pygame import gfxdraw
 import os
 import time
 
-from point import Point
+import pygame
+from pygame import gfxdraw
+
 from graph_drawer import GraphDrawer
+from point import Point
 
 PI = math.pi
 BLACK = (0, 0, 0)
@@ -156,52 +157,53 @@ class Area:
                 gfxdraw.pixel(self.screen, j, i, color)
 
 
-FPS = 15
-pygame.mixer.init()
-screen = pygame.display.set_mode((800, 400))
-
-clock = pygame.time.Clock()
-all_sprites = pygame.sprite.Group()
-electr = ElectronicOscillatorDrawer(
-    Point(400, 200),
-    30,
-    2,
-    "electronic_oscillator.png",
-    screen
-)
-all_sprites.add(electr)
-
-running = True
-paused = False
-
-while running:
-    # Держим цикл на правильной скорости
-    clock.tick(FPS)
-    # Ввод процесса (события)
-    for event in pygame.event.get():
-        # check for closing window
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                paused = not paused
-
-    if paused:
-        continue
-    
-    # Обновление
-    screen.fill((0, 0, 0))
-    start = time.time()
-
-
-    # Рендеринг
-    all_sprites.update()
-    all_sprites.draw(screen)
-
-    # После отрисовки всего, переворачиваем экран
-    pygame.display.flip()
-    end = time.time()
-    print(end - start)
-
-
-pygame.quit()
+#FPS = 15
+#pygame.mixer.init()
+#screen = pygame.display.set_mode((800, 400))
+#
+#clock = pygame.time.Clock()
+#all_sprites = pygame.sprite.Group()
+#electr = ElectronicOscillatorDrawer(
+#    Point(400, 200),
+#    30,
+#    2,
+#    "electronic_oscillator.png",
+#    screen
+#)
+#all_sprites.add(electr)
+#
+#running = True
+#paused = False
+#
+#while running:
+#    # Держим цикл на правильной скорости
+#    clock.tick(FPS)
+#    # Ввод процесса (события)
+#    for event in pygame.event.get():
+#        # check for closing window
+#        if event.type == pygame.QUIT:
+#            running = False
+#        if event.type == pygame.KEYDOWN:
+#            if event.key == pygame.K_SPACE:
+#                paused = not paused
+#
+#    if paused:
+#        continue
+#    
+#    # Обновление
+#    screen.fill((0, 0, 0))
+#    start = time.time()
+#
+#
+#    # Рендеринг
+#    all_sprites.update()
+#    all_sprites.draw(screen)
+#
+#    # После отрисовки всего, переворачиваем экран
+#    pygame.display.flip()
+#    end = time.time()
+#    print(end - start)
+#
+#
+#pygame.quit()
+#
