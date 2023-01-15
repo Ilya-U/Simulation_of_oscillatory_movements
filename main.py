@@ -69,14 +69,16 @@ class MainMenu:
         self.pendulum_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Механчиеские колебания")
         self.next_stage = None
 
-    def update(self, screen):
-        for event in pygame.event.get():
-            self.electronic_button.handle_event(event)
-            self.pendulum_button.handle_event(event)
-
+    def update(self, screen, events):
+        for event in events:
+            self.handle_event(event)
         self.electronic_button.update(screen)
         self.pendulum_button.update(screen)
         self.make_logic()
+
+    def handle_event(self, event):
+        self.electronic_button.handle_event(event)
+        self.pendulum_button.handle_event(event)
 
     def make_logic(self):
         if self.electronic_button.active:
@@ -100,13 +102,16 @@ class ElectronicMenu:
         self.sprite = None
         self.next_stage = None
 
-    def update(self, screen):
-        for event in pygame.event.get():
-            self.electronic_period_button.handle_event(event)
-            self.electronic_next_button.handle_event(event)
+    def update(self, screen, events):
+        for event in events:
+            self.handle_event(event)
         self.electronic_period_button.update(screen)
         self.electronic_next_button.update(screen)
         self.make_logic()
+
+    def handle_event(self, event):
+        self.electronic_period_button.handle_event(event)
+        self.electronic_next_button.handle_event(event)
 
     def make_logic(self):
         if self.electronic_next_button.active:
@@ -116,6 +121,7 @@ class ElectronicMenu:
                 self.electronic_period_button.text = "Неверно"
             else:
                 self.init_sprite(period)
+                self.electronic_next_button.active = False
                 self.next_stage = NoMenu()
 
     def init_sprite(self, period):
@@ -142,16 +148,18 @@ class PendulumMenu:
         self.sprite = None
         self.next_stage = None
 
-    def update(self, screen):
-        for event in pygame.event.get():
-            self.pendulum_period_button.handle_event(event)
-            self.pendulum_max_deviation_button.handle_event(event)
-            self.pendulum_next_button.handle_event(event)
-        
+    def update(self, screen, events):
+        for event in events:
+            self.handle_event(event)
         self.pendulum_period_button.update(screen)
         self.pendulum_max_deviation_button.update(screen)
         self.pendulum_next_button.update(screen)
         self.make_logic()
+
+    def handle_event(self, event):
+        self.pendulum_period_button.handle_event(event)
+        self.pendulum_max_deviation_button.handle_event(event)
+        self.pendulum_next_button.handle_event(event)
 
     def make_logic(self):
         if self.pendulum_next_button.active:
@@ -163,6 +171,7 @@ class PendulumMenu:
                 self.pendulum_max_deviation_button.text = "Неверно"
             else:
                 self.init_sprite(period, max_devaition)
+                self.pendulum_next_button.active = False
                 self.next_stage = NoMenu()
 
     def init_sprite(self, period, max_deviation):
@@ -183,7 +192,7 @@ class PendulumMenu:
 
 
 class NoMenu:
-    def update(self, screen):
+    def update(self, screen, events):
         pass
 
     def user_sprite(self):
@@ -191,6 +200,9 @@ class NoMenu:
 
     def get_next_stage(self):
         return None
+
+    def handle_event(self, event):
+        pass
 
 
 def abort_all_sprites(sprites_group):
@@ -212,11 +224,12 @@ clock = pygame.time.Clock()
 app = MainMenu()
 
 while running:
+    pygame_events = pygame.event.get()
     screen.fill(BLACK)
     clock.tick(FPS)
-    app.update(screen)
     sprite = app.user_sprite()
     next_menu_stage = app.get_next_stage()
+    app.update(screen, pygame_events)
 
     app = next_menu_stage if next_menu_stage is not None else app
     
@@ -227,7 +240,7 @@ while running:
             FPS = 20
         all_sprites.add(sprite)
 
-    for event in pygame.event.get():
+    for event in pygame_events:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
