@@ -16,6 +16,7 @@ class InputBox:
         self.text = text
         self.txt_surface = FONT.render(text, True, self.color)
         self.active = False
+        self.width = w
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -33,7 +34,7 @@ class InputBox:
                 self.txt_surface = FONT.render(self.text, True, self.color)
 
     def update(self, screen):
-        width = max(200, self.txt_surface.get_width()+10)
+        width = self.width
         self.rect.w = width
         self.draw(screen)
 
@@ -94,7 +95,7 @@ class MainMenu:
 
 class ElectronicMenu:
     def __init__(self) -> None:
-        self.electronic_period_button = InputBox(250, 100, 300, 50, COLOR_INACTIVE, text="Период, с")
+        self.electronic_period_button = InputBox(250, 150, 300, 50, COLOR_INACTIVE, text="Период, с")
         self.electronic_next_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Продолжить")
         self.sprite = None
         self.next_stage = None
@@ -135,8 +136,8 @@ class ElectronicMenu:
 
 class PendulumMenu:
     def __init__(self) -> None:
-        self.pendulum_period_button = InputBox(250, 100, 300, 50, COLOR_INACTIVE)
-        self.pendulum_max_deviation_button = InputBox(250, 150, 60, 50, COLOR_INACTIVE)
+        self.pendulum_period_button = InputBox(250, 100, 300, 50, COLOR_INACTIVE, text="Период")
+        self.pendulum_max_deviation_button = InputBox(250, 150, 300, 50, COLOR_INACTIVE, text="Макс. отклонение")
         self.pendulum_next_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Продолжить")
         self.sprite = None
         self.next_stage = None
@@ -170,7 +171,8 @@ class PendulumMenu:
             300, # Длинна веревки
             period,
             max_deviation,
-            'pendulum.png'
+            'pendulum.png',
+            screen
         )
 
     def user_sprite(self):
@@ -190,6 +192,11 @@ class NoMenu:
     def get_next_stage(self):
         return None
 
+
+def abort_all_sprites(sprites_group):
+    sprites = sprites_group.sprites()
+    for i in sprites:
+        i.abort()
 
 FPS = 20
 WIDTH = 800
@@ -228,7 +235,10 @@ while running:
                 paused = not paused
             if event.key == pygame.K_ESCAPE:
                 app = MainMenu()
+                abort_all_sprites(all_sprites)
                 all_sprites.empty()
+                paused = False
+
     if paused:
         continue
     all_sprites.update()

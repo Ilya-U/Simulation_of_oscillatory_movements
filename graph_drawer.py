@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 
 
 class GraphDrawer:
@@ -24,6 +23,8 @@ class GraphDrawer:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
+    def close(self):
+        plt.close()
 
 
 class Line:

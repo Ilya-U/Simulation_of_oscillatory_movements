@@ -69,6 +69,9 @@ class ElectronicOscillatorDrawer(pygame.sprite.Sprite):
             self.electronic_osciliator.amperage
         )
 
+    def abort(self):
+        self.graph_drawer.close()
+
 
 class ElectronicOscillator:
     def __init__(self, maximal_charge: float, period: float) -> None:
