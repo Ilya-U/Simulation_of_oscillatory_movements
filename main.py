@@ -1,4 +1,5 @@
 import pygame
+import time
 
 from pendulum import PendulumDrawer
 from electronic_oscillator import ElectronicOscillatorDrawer
@@ -25,10 +26,7 @@ class InputBox:
         
         if event.type == pygame.KEYDOWN:
             if self.active:
-                if event.key == pygame.K_RETURN:
-                    print(self.text)
-                    self.text = ''
-                elif event.key == pygame.K_BACKSPACE:
+                if event.key == pygame.K_BACKSPACE:
                     self.text = self.text[:-1]
                 else:
                     self.text += event.unicode
@@ -63,148 +61,178 @@ class Button:
         screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
-FPS = 20
-WIDTH = 800
-HEIGHT = 400
-BLACK = (0, 0, 0)
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-all_sprites = pygame.sprite.Group()
-running = True
-paused = False
-clock = pygame.time.Clock()
 
-MAIN_MENU = "main_menu"
-ELECTRONIC_MENU = "electronic_menu"
-PENDULUM_MENU = "electronic_menu"
-ELECTRONIC_OSCILLATOR = "electronic_oscillator"
-PENDULUM = "pendulum"
-STATUS = MAIN_MENU
-
-class App:
+class MainMenu:
     def __init__(self) -> None:
-        self.init_main_menu()
-
-    def mainloop(self):
-        # mainloop выглядит громоздко и уродливо, но,
-        # видимо, только так они и пишутся.
-        global STATUS, running, paused
-        screen.fill(BLACK)
-        while running:
-            if STATUS == MAIN_MENU:
-                for event in pygame.event.get():
-                    self.electronic_button.handle_event(event)
-                    self.pendulum_button.handle_event(event)
-
-                self.electronic_button.update(screen)
-                self.pendulum_button.update(screen)
-                if self.electronic_button.active:
-                    self.init_electronic_menu()
-                    STATUS = ELECTRONIC_MENU
-                    continue
-                if self.pendulum_button.active:
-                    self.init_penulum_menu()
-                    STATUS = PENDULUM_MENU
-            
-            elif STATUS == ELECTRONIC_MENU:
-                for event in pygame.event.get():
-                    self.electronic_period_button.handle_event(event)
-                    self.electronic_next_button.handle_event(event)
-                self.electronic_period_button.update(screen)
-                self.electronic_next_button.update(screen)
-                
-                if self.electronic_next_button.active:
-                    try:
-                        period = int(self.electronic_period_button.text)
-                    except ValueError:
-                        self.electronic_period_button.text = "Неверно"
-                        continue
-                    self.init_electronic_oscillator(period)
-                    STATUS = ELECTRONIC_OSCILLATOR
-            
-            elif STATUS == PENDULUM_MENU:
-                for event in pygame.event.get():
-                    self.pendulum_period_button.handle_event(event)
-                    self.pendulum_max_deviation_button.handle_event(event)
-                    self.pendulum_next_button.handle_event(event)
-                
-                self.pendulum_period_button.update(screen)
-                self.pendulum_max_deviation_button.update(screen)
-                self.pendulum_next_button.update(screen)
-
-                if self.pendulum_next_button.active:
-                    try:
-                        period = int(self.pendulum_period_button.text)
-                        max_devaition = int(self.pendulum_max_deviation_button.text)
-                    except ValueError:
-                        self.pendulum_period_button.text = "Неверно"
-                        self.pendulum_max_deviation_button.text = "Неверно"
-                        continue
-                    self.init_pendulum(period, max_devaition)
-                    STATUS = PENDULUM
-
-            clock.tick(FPS)
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        paused = not paused
-                        if event.key == pygame.K_ESCAPE:
-                            self.clear()
-                            STATUS = MAIN_MENU
-            if paused:
-                continue
-            all_sprites.update()
-            pygame.display.flip()
-
-    def clear(self):
-        all_sprites.empty()
-
-    def init_main_menu(self):
         self.electronic_button = Button(250, 150, 300, 50, COLOR_INACTIVE, "Электромгнитные колебания")
         self.pendulum_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Механчиеские колебания")
+        self.next_stage = None
 
-    def init_electronic_menu(self):
-        self.electronic_period_button = InputBox(250, 150, 300, 50, COLOR_INACTIVE)
+    def update(self, screen):
+        for event in pygame.event.get():
+            self.electronic_button.handle_event(event)
+            self.pendulum_button.handle_event(event)
+
+        self.electronic_button.update(screen)
+        self.pendulum_button.update(screen)
+        self.make_logic()
+
+    def make_logic(self):
+        if self.electronic_button.active:
+            self.next_stage = ElectronicMenu()
+            return
+        if self.pendulum_button.active:
+            self.next_stage = PendulumMenu()
+            return
+    
+    def user_sprite(self):
+        return None
+
+    def get_next_stage(self):
+        return self.next_stage
+
+
+class ElectronicMenu:
+    def __init__(self) -> None:
+        self.electronic_period_button = InputBox(250, 100, 300, 50, COLOR_INACTIVE, text="Период, с")
         self.electronic_next_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Продолжить")
+        self.sprite = None
+        self.next_stage = None
 
-    def init_penulum_menu(self):
-        self.pendulum_period_button = InputBox(250, 100, 300, 50, COLOR_INACTIVE)
-        self.pendulum_max_deviation_button = InputBox(250, 150, 60, 50, COLOR_INACTIVE)
-        self.pendulum_next_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Продолжить")
+    def update(self, screen):
+        for event in pygame.event.get():
+            self.electronic_period_button.handle_event(event)
+            self.electronic_next_button.handle_event(event)
+        self.electronic_period_button.update(screen)
+        self.electronic_next_button.update(screen)
+        self.make_logic()
 
-    def init_electronic_oscillator(self, period):
-        global FPS
-        FPS = 15
-        self.electronic_oscillator = ElectronicOscillatorDrawer(
+    def make_logic(self):
+        if self.electronic_next_button.active:
+            try:
+                period = float(self.electronic_period_button.text)
+            except ValueError:
+                self.electronic_period_button.text = "Неверно"
+            else:
+                self.init_sprite(period)
+                self.next_stage = NoMenu()
+
+    def init_sprite(self, period):
+        self.sprite = ElectronicOscillatorDrawer(
             Point(400, 200), # центр спрайта колебательного контура
             30, # Максимальный заряд
             period,
             "electronic_oscillator.png",
             screen
         )
-        all_sprites.add(self.electronic_oscillator)
+    
+    def user_sprite(self):
+        return self.sprite
+    
+    def get_next_stage(self):
+        return self.next_stage
 
-    def init_pendulum(self, period, max_deviation):
-        global FPS
-        FPS = 20
-        self.pendulum = PendulumDrawer(
+
+class PendulumMenu:
+    def __init__(self) -> None:
+        self.pendulum_period_button = InputBox(250, 100, 300, 50, COLOR_INACTIVE)
+        self.pendulum_max_deviation_button = InputBox(250, 150, 60, 50, COLOR_INACTIVE)
+        self.pendulum_next_button = Button(250, 200, 300, 50, COLOR_INACTIVE, "Продолжить")
+        self.sprite = None
+        self.next_stage = None
+
+    def update(self, screen):
+        for event in pygame.event.get():
+            self.pendulum_period_button.handle_event(event)
+            self.pendulum_max_deviation_button.handle_event(event)
+            self.pendulum_next_button.handle_event(event)
+        
+        self.pendulum_period_button.update(screen)
+        self.pendulum_max_deviation_button.update(screen)
+        self.pendulum_next_button.update(screen)
+        self.make_logic()
+
+    def make_logic(self):
+        if self.pendulum_next_button.active:
+            try:
+                period = float(self.pendulum_period_button.text)
+                max_devaition = float(self.pendulum_max_deviation_button.text)
+            except ValueError:
+                self.pendulum_period_button.text = "Неверно"
+                self.pendulum_max_deviation_button.text = "Неверно"
+            else:
+                self.init_sprite(period, max_devaition)
+                self.next_stage = NoMenu()
+
+    def init_sprite(self, period, max_deviation):
+        self.sprite = PendulumDrawer(
             Point(400, 0), # Точка опоры
             300, # Длинна веревки
             period,
             max_deviation,
             'pendulum.png'
         )
-        all_sprites.add(self.pendulum)
 
-#a = Button(250, 150, 300, 50, COLOR_INACTIVE, "Электромгнитные колебания")
-#while True:
-#    
-#    for event in pygame.event.get():
-#        a.handle_event(event)
-#    print(a.active)
-#    pygame.display.flip()
-#    screen.fill(BLACK)
-app = App()
-app.mainloop()
+    def user_sprite(self):
+        return self.sprite
+
+    def get_next_stage(self):
+        return self.next_stage
+
+
+class NoMenu:
+    def update(self, screen):
+        pass
+
+    def user_sprite(self):
+        return None
+
+    def get_next_stage(self):
+        return None
+
+
+FPS = 20
+WIDTH = 800
+HEIGHT = 400
+BLACK = (0, 0, 0)
+pygame.mixer.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+all_sprites = pygame.sprite.Group()
+running = True
+paused = False
+clock = pygame.time.Clock()
+
+app = MainMenu()
+
+while running:
+    screen.fill(BLACK)
+    clock.tick(FPS)
+    app.update(screen)
+    sprite = app.user_sprite()
+    next_menu_stage = app.get_next_stage()
+
+    app = next_menu_stage if next_menu_stage is not None else app
+    
+    if sprite is not None:
+        if isinstance(sprite, ElectronicOscillatorDrawer):
+            FPS = 15
+        if isinstance(sprite, PendulumDrawer):
+            FPS = 20
+        all_sprites.add(sprite)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                paused = not paused
+            if event.key == pygame.K_ESCAPE:
+                app = MainMenu()
+                all_sprites.empty()
+    if paused:
+        continue
+    all_sprites.update()
+    all_sprites.draw(screen)
+    pygame.display.flip()
+
+pygame.quit()
