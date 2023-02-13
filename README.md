@@ -6,4 +6,4 @@
 `pip install matplotlib`
 
 ## Компиляция
-`pyinstaller -F --add-data "sprites\\pendulum.png;.\sprites" pendulum.pyw`
+`pyinstaller -F --add-data "sprites\\pendulum.png;.\sprites" --add-data "sprites\\electronic_oscillator.png;.\sprites" main.py`
