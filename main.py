@@ -1,8 +1,8 @@
 import pygame
 import time
 
-from pendulum import PendulumDrawer
 from electronic_oscillator import ElectronicOscillatorDrawer
+from pendulum import PendulumDrawer
 from point import Point
 
 pygame.init()
@@ -14,6 +14,7 @@ class InputBox:
         self.rect = pygame.Rect(x, y, w, h)
         self.color = color
         self.text = text
+        self.current_text = text
         self.txt_surface = FONT.render(text, True, self.color)
         self.active = False
         self.width = w
@@ -22,16 +23,17 @@ class InputBox:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(event.pos):
                 self.active = not self.active
+                self.current_text = ""
             else:
                 self.active = False
         
         if event.type == pygame.KEYDOWN:
             if self.active:
                 if event.key == pygame.K_BACKSPACE:
-                    self.text = self.text[:-1]
+                    self.current_text = self.current_text[:-1]
                 else:
-                    self.text += event.unicode
-                self.txt_surface = FONT.render(self.text, True, self.color)
+                    self.current_text += event.unicode
+                self.txt_surface = FONT.render(self.current_text, True, self.color)
 
     def update(self, screen):
         width = self.width
@@ -42,6 +44,8 @@ class InputBox:
         screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
+    def reset_text(self):
+        self.current_text = self.text
 
 class Button:
     def __init__(self, x, y, w, h, color, text) -> None:
@@ -88,7 +92,7 @@ class MainMenu:
             self.next_stage = PendulumMenu()
             return
     
-    def user_sprite(self):
+    def get_user_sprite(self):
         return None
 
     def get_next_stage(self):
@@ -116,9 +120,10 @@ class ElectronicMenu:
     def make_logic(self):
         if self.electronic_next_button.active:
             try:
-                period = float(self.electronic_period_button.text)
+                period = float(self.electronic_period_button.current_text)
             except ValueError:
-                self.electronic_period_button.text = "Неверно"
+                self.electronic_period_button.reset_text()
+                print(self.electronic_period_button.current_text)
             else:
                 self.init_sprite(period)
                 self.electronic_next_button.active = False
@@ -133,7 +138,7 @@ class ElectronicMenu:
             screen
         )
     
-    def user_sprite(self):
+    def get_user_sprite(self):
         return self.sprite
     
     def get_next_stage(self):
@@ -164,11 +169,11 @@ class PendulumMenu:
     def make_logic(self):
         if self.pendulum_next_button.active:
             try:
-                period = float(self.pendulum_period_button.text)
-                max_devaition = float(self.pendulum_max_deviation_button.text)
+                period = float(self.pendulum_period_button.current_text)
+                max_devaition = float(self.pendulum_max_deviation_button.current_text)
             except ValueError:
-                self.pendulum_period_button.text = "Неверно"
-                self.pendulum_max_deviation_button.text = "Неверно"
+                self.pendulum_period_button.reset_text()
+                self.pendulum_max_deviation_button.reset_text()
             else:
                 self.init_sprite(period, max_devaition)
                 self.pendulum_next_button.active = False
@@ -184,7 +189,7 @@ class PendulumMenu:
             screen
         )
 
-    def user_sprite(self):
+    def get_user_sprite(self):
         return self.sprite
 
     def get_next_stage(self):
@@ -195,7 +200,7 @@ class NoMenu:
     def update(self, screen, events):
         pass
 
-    def user_sprite(self):
+    def get_user_sprite(self):
         return None
 
     def get_next_stage(self):
@@ -227,7 +232,7 @@ while running:
     pygame_events = pygame.event.get()
     screen.fill(BLACK)
     clock.tick(FPS)
-    sprite = app.user_sprite()
+    sprite = app.get_user_sprite()
     next_menu_stage = app.get_next_stage()
     app.update(screen, pygame_events)
 
