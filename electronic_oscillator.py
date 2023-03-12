@@ -1,6 +1,5 @@
 import math
 import os
-import time
 
 import pygame
 from pygame import gfxdraw
@@ -71,6 +70,22 @@ class ElectronicOscillatorDrawer(pygame.sprite.Sprite):
 
     def abort(self):
         self.graph_drawer.close()
+
+    def get_data_for_table(self, interval: float) -> list:
+        previos_time = self.electronic_osciliator.timer
+        i = 0
+        ans = []
+        while i <= self.electronic_osciliator.period:
+            self.electronic_osciliator.timer = i
+            data = {
+                "time": i,
+                "charge": self.electronic_osciliator.charge,
+                "amperage": self.electronic_osciliator.amperage
+            }
+            ans.append(data)
+            i += interval * self.electronic_osciliator.period
+        self.electronic_osciliator.timer = previos_time
+        return ans
 
 
 class ElectronicOscillator:
@@ -158,55 +173,3 @@ class Area:
         for i in range(y, y+self.sqaure):
             for j in range(x, x+self.sqaure):
                 gfxdraw.pixel(self.screen, j, i, color)
-
-
-#FPS = 15
-#pygame.mixer.init()
-#screen = pygame.display.set_mode((800, 400))
-#
-#clock = pygame.time.Clock()
-#all_sprites = pygame.sprite.Group()
-#electr = ElectronicOscillatorDrawer(
-#    Point(400, 200),
-#    30,
-#    2,
-#    "electronic_oscillator.png",
-#    screen
-#)
-#all_sprites.add(electr)
-#
-#running = True
-#paused = False
-#
-#while running:
-#    # Держим цикл на правильной скорости
-#    clock.tick(FPS)
-#    # Ввод процесса (события)
-#    for event in pygame.event.get():
-#        # check for closing window
-#        if event.type == pygame.QUIT:
-#            running = False
-#        if event.type == pygame.KEYDOWN:
-#            if event.key == pygame.K_SPACE:
-#                paused = not paused
-#
-#    if paused:
-#        continue
-#    
-#    # Обновление
-#    screen.fill((0, 0, 0))
-#    start = time.time()
-#
-#
-#    # Рендеринг
-#    all_sprites.update()
-#    all_sprites.draw(screen)
-#
-#    # После отрисовки всего, переворачиваем экран
-#    pygame.display.flip()
-#    end = time.time()
-#    print(end - start)
-#
-#
-#pygame.quit()
-#

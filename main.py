@@ -1,5 +1,7 @@
-import pygame
 import time
+
+import pygame
+from tabulate import tabulate
 
 from electronic_oscillator import ElectronicOscillatorDrawer
 from pendulum import PendulumDrawer
@@ -137,6 +139,19 @@ class ElectronicMenu:
             "electronic_oscillator.png",
             screen
         )
+        self.make_table()
+
+    def make_table(self):
+        table = Table(["Время", "Заряд", "Напряжение"])
+        data = self.sprite.get_data_for_table(0.25)
+        for i in data:
+            new_data = [
+                str(round(i["time"], 2)) + " с.",
+                round(i["charge"], 2),
+                round(i["amperage"], 2)
+            ]
+            table.add(new_data)
+        table.show()
     
     def get_user_sprite(self):
         return self.sprite
@@ -189,6 +204,21 @@ class PendulumMenu:
             screen
         )
 
+        self.make_table()
+
+    def make_table(self):
+        table = Table(["Время", "Отклонение", "Скорость"])
+        data = self.sprite.get_data_for_table(0.25)
+        for i in data:
+            new_data = [
+                str(round(i["time"], 2)) + " с.",
+                round(i["deviation"], 2),
+                round(i["speed"], 2)
+            ]
+            table.add(new_data)
+        table.show()
+
+
     def get_user_sprite(self):
         return self.sprite
 
@@ -208,6 +238,22 @@ class NoMenu:
 
     def handle_event(self, event):
         pass
+
+
+class Table:
+    def __init__(self, name_list: list[str]) -> None:
+        self.name_list = name_list
+        self.value_list = []   
+
+    def add(self, new_value: list[str]) -> None:
+        self.value_list.append(new_value)
+
+    def show(self):
+        print("табличка")
+        table = tabulate(self.value_list, self.name_list, tablefmt="fancy_grid")
+        with open("Табличка.txt", "w", encoding="utf-8") as f:
+            f.write(table)
+
 
 
 def abort_all_sprites(sprites_group):

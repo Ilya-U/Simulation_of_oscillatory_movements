@@ -60,6 +60,23 @@ class PendulumDrawer(pygame.sprite.Sprite):
     def abort(self):
         self.graph_drawer.close()
 
+    def get_data_for_table(self, interval: float) -> list:
+        previos_time = self.pendulum.timer
+        i = 0
+        ans = []
+        while i <= self.pendulum.period:
+            self.pendulum.timer = i
+            data = {
+                "time": i,
+                "deviation": self.pendulum.math_position_in_trajectory,
+                "speed": self.pendulum.speed
+            }
+            ans.append(data)
+            i += interval * self.pendulum.period
+        self.pendulum.timer = previos_time
+        return ans
+
+
 
 class Pendulum:
     def __init__(self, fulcrum: Point, length_of_rope: int, peroid: float, amplitude: float) -> None:
@@ -123,53 +140,3 @@ class Pendulum:
     def converted_amplitude(self) -> tuple:
         in_radians = self.amplitude * PI / 180
         return PI/2 - in_radians, PI/2 + in_radians
-
-
-#FPS = 20
-#pygame.init()
-#pygame.mixer.init()
-#screen = pygame.display.set_mode((800, 400))
-#pygame.display.set_caption("TEST")
-#clock = pygame.time.Clock()
-#all_sprites = pygame.sprite.Group()
-#
-#pendulum = PendulumDrawner(Point(400, 0), 300, 2, 360, 'pendulum.png')
-#all_sprites.add(pendulum)
-#
-## Цикл игры
-#running = True
-#paused = False
-#
-#while running:
-#    # Держим цикл на правильной скорости
-#    clock.tick(FPS)
-#    # Ввод процесса (события)
-#    for event in pygame.event.get():
-#        # check for closing window
-#        if event.type == pygame.QUIT:
-#            running = False
-#        if event.type == pygame.KEYDOWN:
-#            if event.key == pygame.K_SPACE:
-#                paused = not paused
-#
-#    if paused:
-#        continue
-#    
-#    # Обновление
-#    start = time.time()
-#    all_sprites.update()
-#    
-#    # Рендеринг
-#    screen.fill((0, 0, 0))
-#    all_sprites.draw(screen)
-#
-#    # После отрисовки всего, переворачиваем экран
-#    pygame.display.flip()
-#    end = time.time()
-#    print(end - start)
-#
-#
-#pygame.quit()
-
-
-# pyinstaller -F --add-data "sprites\\pendulum.png;.\sprites" pendulum.pyw
