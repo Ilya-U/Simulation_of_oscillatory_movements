@@ -5,5 +5,7 @@
 
 `pip install matplotlib`
 
+`pip install tabulate`
+
 ## Компиляция с помощью pyinstaller
 `pyinstaller -F -w --add-data "sprites\\pendulum.png;.\sprites" --add-data "sprites\\electronic_oscillator.png;.\sprites" main.py`
